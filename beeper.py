@@ -18,9 +18,9 @@ def main(args):
     cache = False
 
     notes = []
-    last_was_new = False
     ms = 200
-    vol = 0.25
+    vol = 1.0 / 5
+    style = 'square'
 
     i = -1
     while (i+1) < len(args):
@@ -30,44 +30,42 @@ def main(args):
         if a in ('-h', '--help'):
             return help()
 
-        elif a in ('-n', '--new'):
-            last_was_new = True
-            notes.append(Note(ms=ms, vol=vol))
-
-        elif a in ('-f',):
+        elif a in ('-f', '--freq'):
             i += 1 ; a = args[i]
             hz = float(a)
-            if last_was_new:
-                notes[-1].hz = hz
-            else:
-                notes.append(Note(hz=hz, ms=ms, vol=vol))
-            last_was_new = False
+            notes.append(Note(hz=hz, ms=ms, style=style, vol=vol))
 
-        elif a in ('-t', '--note'):
+        elif a in ('-n', '--note'):
             i += 1 ; a = args[i]
             notename = a
-            if last_was_new:
-                notes[-1].note(notename)
-            else:
-                note = Note(ms=ms, vol=vol)
-                note.note(notename)
-                notes.append(note)
-            last_was_new = False
+            note = Note(ms=ms, style=style, vol=vol)
+            note.note(notename)
+            notes.append(note)
 
-        elif a in ('-l',):
+        elif a in ('-l', '--len', '--length'):
             i += 1 ; a = args[i]
             ms = float(a)
             if notes:
                 notes[-1].ms = ms
 
+        elif a in ('-w', '--wave'):
+            i += 1 ; a = args[i]
+            st = a
+            fname = '%s_wave' % (st)
+            if fname in globals():
+                style = st
+            else:
+                print('invalid wave style: %s' % (st,))
+                return help()
+
         elif a in ('-d', '-D'):
             i += 1 ; a = args[i]
             d = float(a)
-            notes.append(Note(hz=1, ms=d, vol=0))
+            notes.append(Note(hz=1, ms=d, style='square', vol=0))
 
         elif a in ('-v',):
             i += 1 ; a = args[i]
-            vol = float(a) / 200.0
+            vol = float(a) / 500.0
             if vol < 0.0: vol = 0.0
             if vol > 1.0: vol = 1.0
             if notes:
@@ -77,7 +75,7 @@ def main(args):
             cache = True
 
     # ensure beginning and end sound snappy
-    stop = Note(1, 0.1, 0)
+    stop = Note(hz=1, ms=0.1, vol=0)
     notes = [stop] + notes + [stop]
 
     outfile = tempfile
@@ -102,9 +100,10 @@ def help(*args, **kwargs):
 
 
 class Note:
-    def __init__(self, hz=440, ms=200, vol=1.0):
+    def __init__(self, hz=440, ms=200, style='square', vol=1.0):
         self.hz = hz
         self.ms = ms
+        self.style = style
         self.vol = vol
 
     def note(self, name):
@@ -113,34 +112,35 @@ class Note:
         self.hz = freq
 
     def __str__(self):
-        return 'Note(hz=%.1f, ms=%.1f)' % (self.hz, self.ms)
+        return 'Note(hz=%.1f, ms=%.1f, style=%s, vol=%.1f%%)' % (
+                self.hz, self.ms, self.style, 100 * self.vol)
 
     def render(self, rate=44100):
-        lo, hi = 0, 255
-        mid = (hi+lo) / 2.0
-        depth = (hi-lo) / 2.0
-        sq = [int(mid - (depth*self.vol)), int(mid + (depth*self.vol))]
-        sq = tuple(sq)
-        flip = 0
-        #samples = [int(mid)] + [sq[flip]] * int(rate * self.ms / 1000)
-        samples = [sq[flip]] * int(rate * self.ms / 1000)
-        period = rate / float(self.hz) / 2.0
+        wave = globals()['%s_wave' % (self.style,)]
+
+        num_samples = int(rate * self.ms / 1000)
+        samples = bytearray(2 * num_samples)
+
+        period = rate / float(self.hz)
         count = 0.0
-        for i in range(len(samples)):
-            samples[i] = sq[flip]
+        j = 0
+        for i in range(num_samples):
             if count > period:
-                flip ^= 1
                 count -= period
+            sample = int(wave(count/period) * 32767 * self.vol)
+            sample = sample.to_bytes(2, 'little', signed=True)
+            samples[j] = sample[0]
+            samples[j+1] = sample[1]
+            j += 2
             count += 1
-        b = bytes(samples)
-        return b
-        #return samples
+
+        return samples
 
 
 def render(path, notes):
     with wave.open(path, 'wb') as fp:
         fp.setnchannels(1)  # mono
-        fp.setsampwidth(1)  # 8-bit audio
+        fp.setsampwidth(2)  # 16-bit audio
         fp.setframerate(44100)  # 44.1 kHz
         for note in notes:
             #print(note)
@@ -149,6 +149,28 @@ def render(path, notes):
 
 def play(path):
     os.system('play -q %s' % (path,))
+
+
+def triangle_wave(phase):
+    if phase < 0.25:
+        return phase * 4
+    elif phase < 0.75:
+        return 1.0 - (4*(phase-0.25))
+    else:
+        return ((phase-0.75) * 4) - 1.0
+tri_wave = triangle_wave
+
+
+def sawtooth_wave(phase):
+    return 1.0 - (2 * phase)
+saw_wave = sawtooth_wave
+
+
+def square_wave(phase):
+    if phase > 0.5:
+        return 1.0
+    return -1.0
+sq_wave = square_wave
 
 
 def notename2notenum(name):
@@ -213,6 +235,17 @@ notenames = {
 
         'B' : 11,
         }
+
+
+def int_to_bytes(value, length):
+    result = []
+
+    for i in range(0, length):
+        result.append(value >> (i * 8) & 0xff)
+
+    result.reverse()
+
+    return bytes(result)
 
 
 if __name__ == "__main__":
