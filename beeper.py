@@ -27,6 +27,9 @@ import subprocess
 import wave
 
 
+samplerate = 44100
+
+
 def main(args):
     """beeper.py: make "PC speaker" noises ... without a PC speaker
     Usage: beeper.py [options] [tones]
@@ -168,7 +171,8 @@ def main(args):
             elif a[0] in 'CDEFGAB':
                 note_opt(a)
             else:
-                raise ValueError('Unrecognize option: %s' % a)
+                print('Unrecognized option: %s' % a)
+                return help()
 
     # by default, just make a beep
     if not notes:
@@ -215,16 +219,16 @@ class Note:
         Note.phase = 0.0
 
     def note(self, name):
-        num = notename2notenum(name)
-        self.notenum = num
-        freq = note2freq(num)
+        """Set frequency by note name."""
+        self.notenum = notename2notenum(name)
+        freq = note2freq(self.notenum)
         self.hz = freq
 
     def __str__(self):
         return 'Note(hz=%.1f, ms=%.1f, style=%s, vol=%.1f%%)' % (
                 self.hz, self.ms, self.style, 100 * self.vol)
 
-    def render(self, rate=44100):
+    def render(self, rate=samplerate):
         wave = globals()['%s_wave' % (self.style,)]
 
         num_samples = int(rate * self.ms / 1000)
@@ -232,16 +236,14 @@ class Note:
 
         period = rate / float(self.hz)
         count = Note.phase * period
-        j = 0
         for i in range(num_samples):
             if count > period:
                 count -= period
             phase = count / period
             sample = int(wave(phase) * 32767 * self.vol)
             sample = sample.to_bytes(2, 'little', signed=True)
-            samples[j] = sample[0]
-            samples[j+1] = sample[1]
-            j += 2
+            samples[   2*i ] = sample[0]
+            samples[1+(2*i)] = sample[1]
             count += 1
 
         # avoid clicks between notes
@@ -256,7 +258,7 @@ def render(path, notes):
     with wave.open(path, 'wb') as fp:
         fp.setnchannels(1)  # mono
         fp.setsampwidth(2)  # 16-bit audio
-        fp.setframerate(44100)  # 44.1 kHz
+        fp.setframerate(samplerate)  # 44.1 kHz (probably)
         for note in notes:
             #print(note)
             fp.writeframes(note.render())
