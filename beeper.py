@@ -7,6 +7,7 @@
 
 import math
 import os
+import subprocess
 import wave
 
 
@@ -16,7 +17,7 @@ def main(args):
 
     tempfile = 'beeper.wav'
     cache = False
-    print_hz_to_notes = True
+    print_conversions = False
 
     notes = []
     ms = 200
@@ -26,6 +27,30 @@ def main(args):
     # by default, just make a beep
     if not args:
         notes.append(Note(style='tri', vol=vol))
+
+    def freq_opt(a):
+        hz = float(a)
+        notes.append(Note(hz=hz, ms=ms, style=style, vol=vol))
+
+        if print_conversions:
+            num = freq2note(hz)
+            rounded = int(round(num, 0))
+            octave = int(rounded / 12)
+            name = notenum2name[rounded % 12]
+            name = '%s%s' % (name, octave)
+            print('%8.2f hz == note %6.2f: %s' % (hz, num, name,))
+
+    def note_opt(a):
+        notename = a
+        note = Note(ms=ms, style=style, vol=vol)
+        note.note(notename)
+        notes.append(note)
+
+        if print_conversions:
+            name = notename
+            num = note.notenum
+            hz = note.hz
+            print('%-3s == note %6.2f == %8.2f hz' % (name, num, hz))
 
     i = -1
     while (i+1) < len(args):
@@ -37,23 +62,11 @@ def main(args):
 
         elif a in ('-f', '--freq'):
             i += 1 ; a = args[i]
-            hz = float(a)
-            notes.append(Note(hz=hz, ms=ms, style=style, vol=vol))
-
-            if print_hz_to_notes:
-                num = freq2note(hz)
-                rounded = int(round(num, 0))
-                octave = int(rounded / 12)
-                name = notenum2name[rounded % 12]
-                name = '%s%s' % (name, octave)
-                print('%.2f hz == note %.2f: %s' % (hz, num, name,))
+            freq_opt(a)
 
         elif a in ('-n', '--note'):
             i += 1 ; a = args[i]
-            notename = a
-            note = Note(ms=ms, style=style, vol=vol)
-            note.note(notename)
-            notes.append(note)
+            note_opt(a)
 
         elif a in ('-l', '--len', '--length'):
             i += 1 ; a = args[i]
@@ -88,6 +101,17 @@ def main(args):
 
         elif a in ('-c', '--cache'):
             cache = True
+
+        elif a in ('-p', '--print-conversions'):
+            print_conversions = True
+
+        else:
+            if a[0] in '0123456789':
+                freq_opt(a)
+            elif a[0] in 'CDEFGAB':
+                note_opt(a)
+            else:
+                raise ValueError('Unrecognize option: %s' % a)
 
     # ensure beginning and end sound snappy
     stop = Note(hz=1, ms=0.1, vol=0)
@@ -125,6 +149,7 @@ class Note:
 
     def note(self, name):
         num = notename2notenum(name)
+        self.notenum = num
         freq = note2freq(num)
         self.hz = freq
 
@@ -170,8 +195,16 @@ def render(path, notes):
             fp.writeframes(note.render())
 
 
+def run(*args):
+    proc = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout = str(proc.stdout, encoding='utf-8')
+    stderr = str(proc.stderr, encoding='utf-8')
+    code = proc.returncode
+    return code, stdout, stderr
+
+
 def play(path):
-    os.system('play -q %s' % (path,))
+    run('play', '-q', path)
 
 
 def triangle_wave(phase):
