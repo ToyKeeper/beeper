@@ -22,6 +22,7 @@ def main(args):
       -w W  --wave   Set waveform of last note to W: [square] / saw / tri
       -v V  --vol    Set volume of last note to V percent (max 500)
       -d D  --delay  Add a silent delay of length D ms
+      -x X  --exec   Use program X to play the generated .wav file
       -c    --cache  Save .wav file to ~/.sounds/beeper.ARGS.wav
       -p    --print-conversions
                      Print frequency of each note, and note of each frequency
@@ -49,6 +50,7 @@ def main(args):
     tempfile = 'beeper.wav'
     cache = False
     print_conversions = False
+    play_cmd = 'aplay -q'  # alsa default .wav player
 
     notes = []
     ms = 200
@@ -130,6 +132,10 @@ def main(args):
             if notes:
                 notes[-1].vol = vol
 
+        elif a in ('-x', '--exec'):
+            i += 1 ; a = args[i]
+            play_cmd = a
+
         elif a in ('-c', '--cache'):
             cache = True
 
@@ -162,7 +168,7 @@ def main(args):
         if not os.path.exists(outfile):
             render(outfile, notes)
 
-    play(outfile)
+    play(outfile, play_cmd)
 
 
 def help(*args, **kwargs):
@@ -235,8 +241,10 @@ def run(*args):
     return code, stdout, stderr
 
 
-def play(path):
-    run('play', '-q', path)
+def play(path, play_cmd):
+    parts = play_cmd.split()
+    parts.append(path)
+    run(*parts)
 
 
 def triangle_wave(phase):
