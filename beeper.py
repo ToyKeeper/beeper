@@ -16,11 +16,16 @@ def main(args):
 
     tempfile = 'beeper.wav'
     cache = False
+    print_hz_to_notes = True
 
     notes = []
     ms = 200
     vol = 1.0 / 5
     style = 'square'
+
+    # by default, just make a beep
+    if not args:
+        notes.append(Note(style='tri', vol=vol))
 
     i = -1
     while (i+1) < len(args):
@@ -34,6 +39,14 @@ def main(args):
             i += 1 ; a = args[i]
             hz = float(a)
             notes.append(Note(hz=hz, ms=ms, style=style, vol=vol))
+
+            if print_hz_to_notes:
+                num = freq2note(hz)
+                rounded = int(round(num, 0))
+                octave = int(rounded / 12)
+                name = notenum2name[rounded % 12]
+                name = '%s%s' % (name, octave)
+                print('%.2f hz == note %.2f: %s' % (hz, num, name,))
 
         elif a in ('-n', '--note'):
             i += 1 ; a = args[i]
@@ -52,11 +65,13 @@ def main(args):
             i += 1 ; a = args[i]
             st = a
             fname = '%s_wave' % (st)
-            if fname in globals():
-                style = st
-            else:
+            if fname not in globals():
                 print('invalid wave style: %s' % (st,))
                 return help()
+
+            style = st
+            if notes:
+                notes[-1].style = style
 
         elif a in ('-d', '-D'):
             i += 1 ; a = args[i]
@@ -105,6 +120,8 @@ class Note:
         self.ms = ms
         self.style = style
         self.vol = vol
+        # avoid clicks between notes
+        Note.phase = 0.0
 
     def note(self, name):
         num = notename2notenum(name)
@@ -122,17 +139,23 @@ class Note:
         samples = bytearray(2 * num_samples)
 
         period = rate / float(self.hz)
-        count = 0.0
+        count = Note.phase * period
         j = 0
         for i in range(num_samples):
             if count > period:
                 count -= period
-            sample = int(wave(count/period) * 32767 * self.vol)
+            phase = count / period
+            sample = int(wave(phase) * 32767 * self.vol)
             sample = sample.to_bytes(2, 'little', signed=True)
             samples[j] = sample[0]
             samples[j+1] = sample[1]
             j += 2
             count += 1
+
+        # avoid clicks between notes
+        Note.phase = phase
+        if self.vol == 0.0:
+            Note.phase = 0.0
 
         return samples
 
@@ -152,6 +175,8 @@ def play(path):
 
 
 def triangle_wave(phase):
+    # /\
+    #   \/
     if phase < 0.25:
         return phase * 4
     elif phase < 0.75:
@@ -195,6 +220,9 @@ def freq2note(freq):
     return note
 
 
+notenum2name = [
+        'C', 'C+', 'D', 'D+', 'E', 'F', 'F+', 'G', 'G+', 'A', 'A+', 'B',
+        ]
 notenames = {
         'C' : 0,
 
@@ -236,16 +264,6 @@ notenames = {
         'B' : 11,
         }
 
-
-def int_to_bytes(value, length):
-    result = []
-
-    for i in range(0, length):
-        result.append(value >> (i * 8) & 0xff)
-
-    result.reverse()
-
-    return bytes(result)
 
 
 if __name__ == "__main__":
