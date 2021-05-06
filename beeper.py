@@ -87,6 +87,9 @@ def main(args):
         i += 1
         a = args[i]
 
+        if not a.strip():
+            continue
+
         if a in ('-h', '--help'):
             return help()
 
