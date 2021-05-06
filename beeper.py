@@ -156,7 +156,7 @@ def main(args):
 
     # by default, just make a beep
     if not notes:
-        notes.append(Note(style='tri', ms=ms, vol=vol))
+        notes.append(Note(style=style, ms=ms, vol=vol))
 
     # ensure beginning and end sound snappy
     #stop = Note(hz=1, ms=0.1, vol=0)
