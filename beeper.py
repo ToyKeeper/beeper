@@ -20,9 +20,10 @@ def main(args):
       -n N  --note   Start a new note with name N
       -l L  --len    Set length of last note to L ms
       -w W  --wave   Set waveform of last note to W: [square] / saw / tri
-      -v V  --vol    Set volume of last note to V percent (max 500)
+      -v V  --vol    Set volume of last note to V percent [100] (max 500)
       -d D  --delay  Add a silent delay of length D ms
-      -x X  --exec   Use program X to play the generated .wav file
+      -x X  --exec   Use program X to play the generated .wav file [aplay -q]
+      -o F  --out    Save audio in .wav format to file F [beeper.wav]
       -c    --cache  Save .wav file to ~/.sounds/beeper.ARGS.wav
       -p    --print-conversions
                      Print frequency of each note, and note of each frequency
@@ -47,7 +48,7 @@ def main(args):
       beeper.py -w saw -l 1 $(seq 100 1000)
     """
 
-    tempfile = 'beeper.wav'
+    outfile = 'beeper.wav'
     cache = False
     print_conversions = False
     play_cmd = 'aplay -q'  # alsa default .wav player
@@ -56,10 +57,6 @@ def main(args):
     ms = 200
     vol = 1.0 / 5
     style = 'square'
-
-    # by default, just make a beep
-    if not args:
-        notes.append(Note(style='tri', vol=vol))
 
     def freq_opt(a):
         hz = float(a)
@@ -136,6 +133,10 @@ def main(args):
             i += 1 ; a = args[i]
             play_cmd = a
 
+        elif a in ('-o', '--out'):
+            i += 1 ; a = args[i]
+            outfile = a
+
         elif a in ('-c', '--cache'):
             cache = True
 
@@ -150,11 +151,13 @@ def main(args):
             else:
                 raise ValueError('Unrecognize option: %s' % a)
 
-    # ensure beginning and end sound snappy
-    stop = Note(hz=1, ms=0.1, vol=0)
-    notes = [stop] + notes + [stop]
+    # by default, just make a beep
+    if not notes:
+        notes.append(Note(style='tri', ms=ms, vol=vol))
 
-    outfile = tempfile
+    # ensure beginning and end sound snappy
+    #stop = Note(hz=1, ms=0.1, vol=0)
+    #notes = [stop] + notes + [stop]
 
     if not cache:
         render(outfile, notes)
@@ -162,11 +165,18 @@ def main(args):
     else:
         # render to our sound cache
         path = 'beeper.%s.wav' % ('_'.join(args))
-        outfile = os.path.join(os.environ['HOME'], '.sounds', path)
-        #print(outfile)
+        # don't try to make the filename longer than the filesystem allows
+        maxlen = 248
+        if len(path) > maxlen:
+            path = path[:maxlen] + '.wav'
 
-        if not os.path.exists(outfile):
+        outfile = os.path.join(os.environ['HOME'], '.sounds', path)
+
+        if os.path.exists(outfile):
+            print('Used cached file: %s' % (outfile,))
+        else:
             render(outfile, notes)
+            print('Cached to: %s' % (outfile,))
 
     play(outfile, play_cmd)
 
