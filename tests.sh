@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# tests / examples for beeper.py
+
 if [ x"$1" = x"-v" ]; then
   VERBOSE=1
 fi
