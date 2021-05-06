@@ -12,7 +12,38 @@ import wave
 
 
 def main(args):
-    """
+    """beeper.py: make "PC speaker" noises ... without a PC speaker
+    Usage: beeper.py [options] [tones]
+    Options:
+      -h    --help   Display usage info, and exit.
+      -f F  --freq   Start a new note with Hz frequency F
+      -n N  --note   Start a new note with name N
+      -l L  --len    Set length of last note to L ms
+      -w W  --wave   Set waveform of last note to W: [square] / saw / tri
+      -v V  --vol    Set volume of last note to V percent (max 500)
+      -d D  --delay  Add a silent delay of length D ms
+      -c    --cache  Save .wav file to ~/.sounds/beeper.ARGS.wav
+      -p    --print-conversions
+                     Print frequency of each note, and note of each frequency
+
+    Tones:  Can be a number or a note name.  "-f" and "-n" aren't required.
+      Number: Add note of frequency N.  Range: 1.0 to 22050.0
+      Name:   Add note of a given name.  Range: C0 to B9
+              Sharps can be '+' or '#', flats can be '-' or 'b'.
+              For example: G+4 Eb6
+
+    Examples:
+
+    Play a triumphant jingle:
+      beeper.py C4 -l 100 -d 30 E4 -d 30 G4 -d 30 C5 -l 200 -d 30 \\
+                G4 -l 100 -d 30 C5 -l 200
+
+    Play a retro arpeggio:
+      beeper.py -w tri -l 40 C4 E4 G4 C5 E5 G5 C6 E6 G6 C7 \\
+                                G6 E6 C6 G5 E5 C5 G4 E4 C4
+
+    Red alert, Captain!
+      beeper.py -w saw -l 1 $(seq 100 1000)
     """
 
     tempfile = 'beeper.wav'
@@ -86,7 +117,7 @@ def main(args):
             if notes:
                 notes[-1].style = style
 
-        elif a in ('-d', '-D'):
+        elif a in ('-d', '-D', '--delay'):
             i += 1 ; a = args[i]
             d = float(a)
             notes.append(Note(hz=1, ms=d, style='square', vol=0))
@@ -135,7 +166,8 @@ def main(args):
 
 
 def help(*args, **kwargs):
-    print(main.__doc__)
+    text = main.__doc__.replace('\n    ', '\n')
+    print(text)
 
 
 class Note:
