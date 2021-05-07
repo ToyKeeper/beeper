@@ -49,6 +49,11 @@ main () {
     b red-alert -l 1 $(seq 100 1000)
     b laser -l 0.5 $(seq 1000 -1 100)
     b random -l 80 $(./randints.py 100 4000 16)
+    # d'oh, the UFO sound got a lot less interesting when I fixed a bug..
+    # ... because the cool sound it made depended on a bug in the synth engine
+    # (it'd repeat the same phase for one sample each time a note started,
+    #  which made audible artifacts, and the "ufo" sound was based on those)
+    # so... it's boring now
     #b ufo -l 0.5 $(seq 4000 -2 2000) $(seq 2000 2 4000) $(seq 4000 -2 2000) $(seq 2000 2 4000)
     b ufo -l 1 $(seq 4000 -5 2000) $(seq 2000 5 4000) $(seq 4000 -5 2000) $(seq 2000 5 4000)
     b pacman -l 0.25 $(seq 4000 -5 2000) $(seq 2000 5 4000) $(seq 4000 -5 2000) $(seq 2000 5 4000)

@@ -262,6 +262,7 @@ class Note:
             count += 1
 
         # avoid clicks between notes
+        phase = count / period  # avoid repeating same sample twice in a row
         Note.phase = phase
         if self.vol == 0.0:
             Note.phase = 0.0
