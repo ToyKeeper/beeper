@@ -17,34 +17,34 @@ main () {
   b kick-2 8000 -w tri -l 5 -v 100 20 -w sq -l 1 -v 200 -d 1
   b kick-3 12000 -w sq -l 5 -v 100 20 -w sq -l 1 -v 200 -d 1
 
-  b tri-square-saw -l 750 -n C4 -w tri -n C4 -w square -n C4 -w saw
+  b tri-square-saw -l 750 -n C4 -w tri -n C -w square -n C -w saw
 
   for style in square saw tri ; do
 
     echo "=== $style ==="
 
-    b volume-test -l 333 C5 -v 1 C5 -v 3 C5 -v 10 C5 -v 33 C5 -v 100 C5 -v 200 C5 -v 500
+    b volume-test -l 333 C -v 1 C -v 3 C -v 10 C -v 33 C -v 100 C -v 200 C -v 500
 
     b ac-power-plugged-in -f 880 -l 50 -f 1200 -l 50
     b ac-power-unplugged -f 880 -l 50 -f 600 -l 50
     b on-battery-power -l 30 2000 500
 
     b 1up -l 50 -f 200 -f 400 -f 600 -f 800 -f 1000 -f 1200 -f 1600
-    b minor-lo -l 50 -n B4 -D 20 -n D5 -D 20 -n F+5
-    b minor-hi -l 50 -n E6 -D 20 -n G6 -D 20 -n B6
-    b minor-hi-back -l 40 E6 G6 B6 G6 E6
+    b minor-lo -l 50 -n B4 -D 20 -n D -D 20 -n F+
+    b minor-hi -l 50 -n E6 -D 20 -n G -D 20 -n B
+    b minor-hi-back -l 40 E6 G B G E
     b minor-hi-2 -l 30 -n C+6 -D 10 -n E6 -D 10 -n G+6 -D 10 -n C+6 -D 10 -n E6 -D 10 -n G+6
-    b minor-hi-2b -l 40 C+6 E6 G+6 C+6 E6 G+6
-    b minor-arpeggio -l 12 C+6 E6 G+6  C+6 E6 G+6  C+6 E6 G+6  C+6 E6 G+6
-    b major-lo -l 50 B4 -d 20 D+5 -d 20 F+5
-    b major-hi -l 50 E6 -D 20 G+6 -D 20 B6
-    b major-hi-back -l 30 E6 -D 10 G+6 -D 10 B6 -D 10 G+6 -D 10 E6
-    b slip-down -l 20 E6 -D 5 D+6 -D 5 D6 -D 5 C+6 -D 5 C6
-    b slip-down-short -l 20 E6 -D 5 D+6 -D 5 D6
-    b slip-up -l 20 D+6 -D 5 E6 -D 5 F6 -D 5 F+6 -D 5 G6 -D 5 G+6
-    b slip-up-short -l 20 D+6 -D 5 E6 -D 5 F6
+    b minor-hi-2b -l 40 C+6 E G+ C+6 E G+
+    b minor-arpeggio -l 12 C+6 E G+  C+6 E G+  C+6 E G+  C+6 E G+
+    b major-lo -l 50 B4 -d 20 D+ -d 20 F+
+    b major-hi -l 50 E6 -D 20 G+ -D 20 B
+    b major-hi-back -l 30 E6 -D 10 G+ -D 10 B -D 10 G+ -D 10 E
+    b slip-down -l 20 E6 -D 5 D+ -D 5 D -D 5 C+ -D 5 C
+    b slip-down-short -l 20 E6 -D 5 D+ -D 5 D
+    b slip-up -l 20 D+6 -D 5 E -D 5 F -D 5 F+ -D 5 G -D 5 G+
+    b slip-up-short -l 20 D+6 -D 5 E -D 5 F
     b random1 -l 30 -f 1527 -D 5 -f 2153 -D 5 -f 1721 -D 5 -f 1254 -D 5 -f 2153
-    b slide-up -l 7 E4 F+4 G+4 A+4 C+5 E5 F+5 G+5 A+5 C6 D6 D+6 E6 F6
+    b slide-up -l 7 E4 F+ G+ A+ C+ E F+ G+ A+ C D D+ E F
 
     b red-alert -l 1 $(seq 100 1000)
     b laser -l 0.5 $(seq 1000 -1 100)
@@ -52,14 +52,18 @@ main () {
     b ufo -l 1 $(seq 4000 -5 2000) $(seq 2000 5 4000) $(seq 4000 -5 2000) $(seq 2000 5 4000)
     b pacman -l 0.25 $(seq 4000 -5 2000) $(seq 2000 5 4000) $(seq 4000 -5 2000) $(seq 2000 5 4000)
 
-    b big-blues-scale -l 100 \
-      C1 D+1 F1 F+1 G1 A+1 \
-      C2 D+2 F2 F+2 G2 A+2 \
-      C3 D+3 F3 F+3 G3 A+3 \
-      C4 D+4 F4 F+4 G4 A+4 \
-      C5 D+5 F5 F+5 G5 A+5 \
-      C6 D+6 F6 F+6 G6 A+6 \
-      C7 D+7 F7 F+7 G7 A+7 C8
+    # C0 to C10
+    b big-blues-scale -l 80 \
+      C0 D+ F F+ G A+ \
+      C  D+ F F+ G A+ \
+      C  D+ F F+ G A+ \
+      C  D+ F F+ G A+ \
+      C  D+ F F+ G A+ \
+      C  D+ F F+ G A+ \
+      C  D+ F F+ G A+ \
+      C  D+ F F+ G A+ \
+      C  D+ F F+ G A+ \
+      C  D+ F F+ G A+ C
 
   done
 

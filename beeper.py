@@ -331,9 +331,9 @@ def notename2notenum(name, prev_note=None):
         prev = notename2notenum.prev
         prev_oct = prev - (prev % 12)
 
-        candidates = (prev_oct + base, 0,
-                      prev_oct + 12 + base, 12,
-                      prev_oct - 12 + base, -12)
+        candidates = (prev_oct + base,
+                      prev_oct + base + 12,
+                      prev_oct + base - 12)
 
         diffs = [(abs(c - prev), c) for c in candidates]
         diffs.sort()
