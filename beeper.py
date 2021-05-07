@@ -309,17 +309,41 @@ def square_wave(phase):
 sq_wave = square_wave
 
 
-def notename2notenum(name):
+def notename2notenum(name, prev_note=None):
+    # for automatic octave support, start near this note:
+    if not hasattr(notename2notenum, 'prev'):
+        notename2notenum.prev = 60  # C5
+
+    # check if an octave was specified
     try:
+        auto_octave = False
         assert(int(name[-1]) >= 0)
     except:
-        # default octave
-        name = name + '4'
+        auto_octave = True
+        name = name + '*'
+
+    # don't try to play notes which don't exist
     assert(name[:-1] in notenames)
 
-    octave = int(name[-1])
-    base = notenames[name[:-1]]
-    num = (octave*12) + base
+    base = notenames[name[:-1]]  # 0 to 11
+
+    if auto_octave:  # pick the nearest note, even if in a different octave
+        prev = notename2notenum.prev
+        prev_oct = prev - (prev % 12)
+
+        candidates = (prev_oct + base, 0,
+                      prev_oct + 12 + base, 12,
+                      prev_oct - 12 + base, -12)
+
+        diffs = [(abs(c - prev), c) for c in candidates]
+        diffs.sort()
+        num = diffs[0][1]
+
+    else:  # octave was given by user
+        octave = int(name[-1])
+        num = (octave*12) + base
+
+    notename2notenum.prev = num  # remember for later
     return num
 
 

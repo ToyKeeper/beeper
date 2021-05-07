@@ -42,8 +42,10 @@ Compared to "beep", there are several new features:
     * Volume
     * Wave shape
 
-As a side note, a few options are implicit and don't need a "-a / --arg" before
-them:
+
+## Tips
+
+A few options are implicit and don't need a "-a / --arg" before them:
 
     * Frequency (-f)
     * Note name (-n)
@@ -61,6 +63,18 @@ with no need to repeat the option.  So instead of this...
 ```
 ./beeper.py -l 100 C5 square E5 tri G5 C6
 ```
+
+It can figure out octaves automatically too, in many cases... so the note
+name doesn't need an octave.  For example, to do arpeggios which include notes
+from more than one octave...
+
+```
+./beeper.py -l 80 c e g c g e c  # down and then up
+./beeper.py -l 80 c g e c e g c  # up and then down
+```
+
+If the octave number is omitted, it will simply use the nearest note of the
+given name.  So "C5 D" goes up to D5, while "C5 B" goes down to B4.
 
 
 ## X11 Bell
