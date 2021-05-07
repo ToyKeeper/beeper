@@ -90,7 +90,7 @@ def main(args):
             print('%8.2f hz == note %6.2f: %s' % (hz, num, name,))
 
     def note_opt(a):
-        notename = a
+        notename = a[0].upper() + a[1:]
         note = Note(ms=ms, style=style, vol=vol)
         note.note(notename)
         notes.append(note)
@@ -100,6 +100,19 @@ def main(args):
             num = note.notenum
             hz = note.hz
             print('%-3s == note %6.2f == %8.2f hz' % (name, num, hz))
+
+    def wave_opt(a):
+        st = a
+        fname = '%s_wave' % (st)
+        if fname not in globals():
+            print('invalid wave style: %s' % (st,))
+            return help()
+
+        nonlocal style
+        style = st
+        if notes:
+            notes[-1].style = style
+
 
     i = -1
     while (i+1) < len(args):
@@ -128,15 +141,7 @@ def main(args):
 
         elif a in ('-w', '--wave'):
             i += 1 ; a = args[i]
-            st = a
-            fname = '%s_wave' % (st)
-            if fname not in globals():
-                print('invalid wave style: %s' % (st,))
-                return help()
-
-            style = st
-            if notes:
-                notes[-1].style = style
+            wave_opt(a)
 
         elif a in ('-d', '-D', '--delay'):
             i += 1 ; a = args[i]
@@ -168,7 +173,9 @@ def main(args):
         else:
             if a[0] in '0123456789':
                 freq_opt(a)
-            elif a[0] in 'CDEFGAB':
+            elif ('%s_wave' % a) in globals():
+                wave_opt(a)
+            elif a[0].upper() in 'CDEFGAB':
                 note_opt(a)
             else:
                 print('Unrecognized option: %s' % a)
@@ -303,8 +310,12 @@ sq_wave = square_wave
 
 
 def notename2notenum(name):
+    try:
+        assert(int(name[-1]) >= 0)
+    except:
+        # default octave
+        name = name + '4'
     assert(name[:-1] in notenames)
-    assert(int(name[-1]) >= 0)
 
     octave = int(name[-1])
     base = notenames[name[:-1]]

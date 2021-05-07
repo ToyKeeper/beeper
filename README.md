@@ -42,6 +42,26 @@ Compared to "beep", there are several new features:
     * Volume
     * Wave shape
 
+As a side note, a few options are implicit and don't need a "-a / --arg" before
+them:
+
+    * Frequency (-f)
+    * Note name (-n)
+    * Wave shape (-w)
+
+... and other options generally carry forward and affect everything after them,
+with no need to repeat the option.  So instead of this...
+
+```
+./beeper.py -n C5 -w square -l 100 -n E5 -w tri -l 100 -n G5 -w tri -l 100 -n C6 -w tri -l 100
+```
+
+... it also works to do this:
+
+```
+./beeper.py -l 100 C5 square E5 tri G5 C6
+```
+
 
 ## X11 Bell
 
