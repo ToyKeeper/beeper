@@ -23,6 +23,7 @@
 
 import math
 import os
+import random
 import subprocess
 import wave
 
@@ -42,7 +43,7 @@ def main(args):
       -v V  --vol    Set volume of last note to V percent [100] (max 500)
       -d D  --delay  Add a silent delay of length D ms
       -x X  --exec   Use program X to play the generated .wav file [aplay -q]
-      -o F  --out    Save audio in .wav format to file F [beeper.wav]
+      -o F  --out    Save audio in .wav format to file F
       -c    --cache  Save .wav file to ~/.sounds/beeper.ARGS.wav
       -p    --print-conversions
                      Print frequency of each note, and note of each frequency
@@ -67,7 +68,8 @@ def main(args):
       beeper.py -w saw -l 1 $(seq 100 1000)
     """
 
-    outfile = 'beeper.wav'
+    outfile = '/tmp/beeper.%i.wav' % (random.randint(1, 99999))
+    keep = False
     cache = False
     print_conversions = False
     play_cmd = 'aplay -q'  # alsa default .wav player
@@ -163,9 +165,11 @@ def main(args):
         elif a in ('-o', '--out'):
             i += 1 ; a = args[i]
             outfile = a
+            keep = True
 
         elif a in ('-c', '--cache'):
             cache = True
+            keep = True
 
         elif a in ('-p', '--print-conversions'):
             print_conversions = True
@@ -209,6 +213,10 @@ def main(args):
             print('Cached to: %s' % (outfile,))
 
     play(outfile, play_cmd)
+
+    # don't leave 'beeper.wav' files laying around
+    if not keep:
+        os.unlink(outfile)
 
 
 def help(*args, **kwargs):
