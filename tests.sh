@@ -25,8 +25,8 @@ main () {
 
     b volume-test -l 333 C -v 1 C -v 3 C -v 10 C -v 33 C -v 100 C -v 200 C -v 500
 
-    b ac-power-plugged-in -f 880 -l 50 -f 1200 -l 50
-    b ac-power-unplugged -f 880 -l 50 -f 600 -l 50
+    b ac-power-plugged-in -l 50 880 -d 20 1200
+    b ac-power-unplugged -l 50 880 -d 20 600
     b on-battery-power -l 30 2000 500
 
     b 1up -l 50 -f 200 -f 400 -f 600 -f 800 -f 1000 -f 1200 -f 1600
