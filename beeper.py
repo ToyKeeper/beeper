@@ -179,7 +179,9 @@ def main(args):
                 freq_opt(a)
             elif ('%s_wave' % a) in globals():
                 wave_opt(a)
-            elif a[0].upper() in 'CDEFGAB':
+            elif (a[0].upper() in 'CDEFGAB') \
+                    or (('_' in a) and (a[0].upper() in notelengths)) \
+                    or ('REST' == a.upper()):
                 note_opt(a)
             else:
                 print('Unrecognized option: %s' % a)
@@ -225,16 +227,25 @@ def help(*args, **kwargs):
 
 
 class Note:
-    def __init__(self, hz=440, ms=200, style='square', vol=1.0):
+    def __init__(self, hz=440, ms=200, style='square', vol=1.0, duration=1.0):
         self.hz = hz
-        self.ms = ms
+        self.base_ms = ms
+        self.duration = duration
+        self.ms = self.base_ms * self.duration
         self.style = style
         self.vol = vol
         # avoid clicks between notes
         Note.phase = 0.0
+        Note.prev_sample = 0
 
     def note(self, name):
         """Set frequency by note name."""
+        name = name.upper()
+        # rests are a special case
+        if 'REST' in name:
+            self.style = 'rest'
+        self.duration = notename2notelength(name)
+        self.ms = self.base_ms * self.duration
         self.notenum = notename2notenum(name)
         freq = note2freq(self.notenum)
         self.hz = freq
@@ -255,7 +266,9 @@ class Note:
             if count > period:
                 count -= period
             phase = count / period
-            sample = int(wave(phase) * 32767 * self.vol)
+            sample = wave(phase, Note.prev_sample)
+            Note.prev_sample = sample
+            sample = int(sample * 32767 * self.vol)
             sample = sample.to_bytes(2, 'little', signed=True)
             samples[   2*i ] = sample[0]
             samples[1+(2*i)] = sample[1]
@@ -264,7 +277,7 @@ class Note:
         # avoid clicks between notes
         phase = count / period  # avoid repeating same sample twice in a row
         Note.phase = phase
-        if self.vol == 0.0:
+        if (self.vol == 0.0) or ('rest' == self.style):
             Note.phase = 0.0
 
         return samples
@@ -294,7 +307,7 @@ def play(path, play_cmd):
     run(*parts)
 
 
-def triangle_wave(phase):
+def triangle_wave(phase, prev):
     # /\
     #   \/
     if phase < 0.25:
@@ -306,22 +319,51 @@ def triangle_wave(phase):
 tri_wave = triangle_wave
 
 
-def sawtooth_wave(phase):
+def sawtooth_wave(phase, prev):
     return 1.0 - (2 * phase)
 saw_wave = sawtooth_wave
 
 
-def square_wave(phase):
+def square_wave(phase, prev):
     if phase > 0.5:
         return 1.0
     return -1.0
 sq_wave = square_wave
 
 
+def rest_wave(phase, prev):
+    # gradual slope down to zero
+    return prev * 0.99
+rst_wave = rest_wave
+
+
+def notename2notelength(name):
+    duration = 1.0
+    if '_' not in name:
+        return duration
+
+    letters = name.split('_')[0].upper()
+    for letter in letters:
+        if letter in notelengths:
+            multiplier = notelengths[letter]
+            duration = duration * multiplier
+
+    return duration
+
+
 def notename2notenum(name, prev_note=None):
     # for automatic octave support, start near this note:
     if not hasattr(notename2notenum, 'prev'):
         notename2notenum.prev = 60  # C5
+
+    # strip duration info
+    if '_' in name:
+        name = name.split('_')[-1]
+        #print(f'notename2notenum({name})')
+
+    if 'REST' == name.upper():
+        notename2notenum.prev = 0  # remember for later
+        return 0
 
     # check if an octave was specified
     try:
@@ -410,6 +452,16 @@ notenames = {
         'Bb': 10,
 
         'B' : 11,
+        }
+notelengths = {
+        'B' : 8.0,   # breve note (2 measures)
+        'W' : 4.0,   # whole note (1 measure)
+        'H' : 2.0,   # half note
+        'Q' : 1.0,   # quarter note
+        'E' : 0.5,   # 1/8th note
+        'S' : 0.25,  # 16th note
+        'T' : 0.125, # 32nd note
+        'D' : 1.5,   # dotted makes it 1.5X as long
         }
 
 

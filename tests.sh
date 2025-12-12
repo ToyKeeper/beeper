@@ -73,6 +73,18 @@ main () {
 
   done
 
+  echo "== songs =="
+
+  b best-song -w tri -l 125 \
+    Q_F4 Q_G4 Q_A+4 Q_G4 \
+    HD_D5 T_REST HD_D5 T_REST WD_C5 E_REST \
+    Q_F4 Q_G4 Q_A+4 Q_G4 \
+    HD_C5 T_REST HD_C5 T_REST WD_A+4 E_REST \
+    Q_F4 Q_G4 Q_A+4 Q_G4 \
+    W_A+4 H_C5 H_A4 H_A4 \
+    H_G4 H_F4 H_F4 W_C5 W_A+4 \
+    T_REST
+
 }
 
 b () {
